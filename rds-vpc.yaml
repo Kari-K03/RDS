@@ -1,0 +1,115 @@
+# Description of what this change includes
+# Revision number
+# Date
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  CloudFormation template to create a VPC named VPC-dakkno8056
+  spanning at least 3 Availability Zones in us-west-2.
+
+Resources:  
+  RdsInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      VPCSecurityGroups:
+      - <SECURITY-GROUP-ID>
+      AllocatedStorage: '5'
+      DBInstanceClass: db.t3.micro
+      DBInstanceIdentifier: playground-db
+      Engine: MySQL
+      MasterUsername: Admin
+      MasterUserPassword: CloudAcademy123!
+
+  # ----------------------------
+  # VPC
+  # ----------------------------
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: VPC-dakkno8056
+
+  # ----------------------------
+  # Internet Gateway
+  # ----------------------------
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: IGW-dakkno8056
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # ----------------------------
+  # Availability Zones (Dynamic)
+  # ----------------------------
+  AZs:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /dakkno8056/azs
+      Type: String
+      Value: !Join 
+        - ","
+        - !GetAZs ""
+
+  # ----------------------------
+  # Public Subnets Across 3 AZs
+  # ----------------------------
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public-Subnet-1-dakkno8056
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public-Subnet-2-dakkno8056
+
+  PublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: Public-Subnet-3-dakkno8056
+
+Outputs:
+
+  VPCId:
+    Description: ID of the created VPC
+    Value: !Ref VPC
+
+  Subnet1:
+    Description: Public Subnet 1
+    Value: !Ref PublicSubnet1
+
+  Subnet2:
+    Description: Public Subnet 2
+    Value: !Ref PublicSubnet2
+
+  Subnet3:
+    Description: Public Subnet 3
+    Value: !Ref PublicSubnet3
